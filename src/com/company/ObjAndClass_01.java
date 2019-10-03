@@ -3,6 +3,7 @@ package com.company;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.GregorianCalendar;
 
 /*
@@ -123,8 +124,12 @@ class Employee {
     }
 
     public LocalDate getHireDay() {
-        return this.hireDay;
+        return this.hireDay; //如果这个hireDay是Date类，则不能这么编写返回引用可变对象的访问器方法，因为如果使用Date类，
+        // 其中有一个更改器方法setTime,可以设置毫秒数，Date对象就是可变的。这一点破坏了封装性。
+        // 如果需要返回一个可变对象的引用，应该先对他进行克隆clone。
+        // LocalDate类是没更改器方法，他的对象不属于可变对象。
     }
+
 
     // 加薪也是要在其他类中使用，因此需要public
     // 注意这里的显式变量也不要和实力域重复

@@ -1,1 +1,54 @@
-1.
+1.封装需要的内容：
+    一个私有的数据域
+    一个公有的域访问器方法
+    一个公有的域更改器方法
+2.注意不要编写返回引用可变对象的访问器方法。什么是可变对象？就是有更改器方法的类的实例对象，就是可变对象。例如Date类的对象。
+3.私有方法：当这个（私有）方法不被使用时候，可以随时删除，但是如果是公有方法，则可能被其他的代码依赖，不能随便删除。
+4.final实例域：可以将实例域定义为final，但必须确保构建一个构造器执行后，这个域的值被设置，并且在后面的操作中，不能够再对他进行修改。
+    final一般修饰不可变的类，例如String。而对于StringBuilder属于可变的类，如果使用final会造成混乱。
+
+4.4静态域和静态方法
+1.静态域（类域）
+    如果将域定义为static，每个类中只有一个这样的域。而每一个对象对于所有的实例域却都有自己的一份拷贝。
+    例如，存在一个如下类，每个实例化的对象都有一个自己的id域，但这个类的所有实例将共享一个nextId域。即使没有一个对象，nextId也存在。它属于类，而不属于任何独立的对象。
+    Class Employee
+    {
+        private static int nextId = 1;
+        private int id;
+        public void setId()
+        {
+            id = nextId;
+            nextId++;
+        }
+    }
+
+2.静态常量：静态变量用的比较少，但静态常量却用的比较多。例如Math.PI,System.out  这些都是公有常量（相应的，还是将实例域设计为私有比较好）。
+3.静态方法：是一种不能面向对象实施操作的方法。例如Math.pow  这个方法不使用任何Math对象。换句话说，没有隐式的参数。他虽然不可以方法对象的实例域，但是可以访问自身类的静态域。
+    使用静态方法的两种情况：
+        一个方法不需要访问对象状态，其所需参数都是通过显式参数提供，例如Math.pow
+        一个方法只需要访问类的静态域
+
+    static关键字：在C中意义表示变量一直存在，后来表示不能被其他文件方法的全局变量和函数。在Java和CPP中的解释为：属于类且不属于类对象的变量和函数。
+
+    静态方法还可以用于静态工厂方法来构造对象，类似于LocalDate.of和LocalDate.of。
+        在LocalDate中构造方法是私有方法：
+            private LocalDate(int year, int month, int dayOfMonth) {
+                this.year = year;
+                this.month = (short) month;
+                this.day = (short) dayOfMonth;
+            }
+        我们使用静态工厂方法来构造对象：
+            public static LocalDate of(int year, int month, int dayOfMonth) {
+                    YEAR.checkValidValue(year);
+                    MONTH_OF_YEAR.checkValidValue(month);
+                    DAY_OF_MONTH.checkValidValue(dayOfMonth);
+                    return create(year, month, dayOfMonth);
+            }
+
+            private static LocalDate create(int year, int month, int dayOfMonth) {
+                //先对输入的年月日做合法性判断，是不是闰年，有没有31号等。
+                return new LocalDate(year, month, dayOfMonth);  //最后在这里才执行构造函数
+            }
+
+
+
