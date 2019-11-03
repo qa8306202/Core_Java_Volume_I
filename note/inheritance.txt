@@ -1,0 +1,4 @@
+1.类、超类、和子类
+    关键字 extends表示继承（cpp中冒号表示继承），在java中所有的继承都是公有继承，而没有Cpp中的私有继承和保护继承。
+    extends表明正在构造的新类派生于一个已存在的类。已存在的类称为超类（superclass）、基类（basic class）或父类（parent class）；新类
+
