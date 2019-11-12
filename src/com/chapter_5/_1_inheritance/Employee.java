@@ -1,8 +1,10 @@
 package com.chapter_5._1_inheritance;
 
 import java.time.LocalDate;
+import java.util.Objects;
 
-public class Employee {
+public class Employee extends Object
+{
     private String name;
     private double salary;
     private LocalDate hireDay;

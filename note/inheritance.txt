@@ -76,7 +76,7 @@ public class Manage extends Employee
 1.6 理解方法调用
     假设要调用x.f(args),隐式参数x声明为类C的一个对象，下面是调用过程的详细描述：
         1）编译器查看对象的声明类型的方法名。假设调用x.f(param)，且隐式参数x声明为C类的对象。需要注意的是：可能存在多个名为f但参数类型不一样的方法，包括所有C类名为f的方法和其超类中访问属性为public且名为f的方法（超类的私有方法不可访问）。
-        2）编译器将查看调用方法时提供的参数类型。如果在所有名为f的方法中存在一个与提供的参数类型完全匹配，就选择这个方法。这个过程被称为重载解析（overloading resolution）。Java中方法的签名是方法的名字和其参数列表。而返回类型只要具有兼容性即可，不必完全相同。这里有个术语：“协变返回类型covariant return”指的是子类中的成员函数的返回值类型不必严格等同于父类中被重写的成员函数的返回值类型如果子类覆盖的方法返回类型与基类不同。
+        2）编译器将查看调用方法时提供的参数类型。如果在所有名为f的方法中存在一个与提供的参数类型完全匹配，就选择这个方法。这个过程被称为重载解析（overloading resolution）。Java中方法的签名是方法的名字和其参数列表（形参类别、个数、顺序）。而返回类型只要具有兼容性即可，不必完全相同。这里有个术语：“协变返回类型covariant return”指的是子类中的成员函数的返回值类型不必严格等同于父类中被重写的成员函数的返回值类型如果子类覆盖的方法返回类型与基类不同。
         3）如果是private方法、static方法、final方法或者构造器，那么编译器将可以准确地知道应该调用哪个方法，我们将这种调用方法称为“静态绑定（static binding）”。相反是动态绑定
         4）当程序运行，并且采用动态绑定调用方法时，虚拟机一定调用与x所引用对象的实际类型最合适的那个类的方法。每次调用方法都要进行搜索，时间开销相当大，因此，虚拟机预先为每个类创建了一个方法表（method table），其中列出了所有方法的签名和实际调用的方法。
     举例，调用5_1_inheritance中e.getSalary()方法的解析过程：
@@ -125,11 +125,119 @@ public class Manage extends Employee
 ----------------------------------------------------------------------------------------------------------------------
 
 2. Object:所有类的超类
+在java中，只有基本类型（primitive types）不是对象，例如，数值、字符和布尔类型的值都不是对象。所有的数组类型，不管是对象数组还是基本类型的数组都扩展了Object类。
+在C++中没有所有类的根类，不过，每个指针都可以转换成void* 指针。
 
+2.1 equals方法
+    object类中的equals方法用于检测一个对象是否等于另外一个对象。在object类中，这个方法将判断两个对象是否具有相同的引用。具体而言是判断类别->状态（field）是否相等。
+    equals方法的实现机制如下：
+    public class Employee
+    {
+        ...
+        public boolean equals(Object otherObject)
+        {
+            // a quick test to see if the objects are identical
+            if (this == otherObject) return ture;
+            // must return false if the explicit parameter is null
+            if (otherObject == null) return false;
+            // if the classes do not match, they cannot be equal
+            if (getClass() != otherObject.getClass())  return false;
+            // now we know otherObject is non-null Employee
+            Employee other = (Employee) otherObject;
 
+            // test whether the fields have identical values
+            return Objects.equals(name,other.name)
+                && salary == other.salary
+                && Objects.equals(hireDay,other.hireDay);// different with hireDay.equals(other.hireDay)
+        }
+    }
 
+    其中，getClass方法将返回一个对象所属的类，Object.equals是为了防止，hireDay == null同时other.hireDay也是null的情况下返回不是true。
 
+2.2 相等测试与继承
+    有些程序员喜欢使用instanceof来进行检测是否相同，（instanceof 严格来说是Java中的一个双目运算符，用来测试一个对象是否为一个类的实例）。这是有问题的。
+    因为
+    Java语言规范要求equals方法具有下面的特性：
+        1）自反性：对于任何非空引用x，x.equals(x)返回true，
+        2）对称性：对于任何引用x,y和z，如果仅当x.equals(y)返回true，y.equals（x）也应该为true
+        3）传递性：
+        4）一致性：如果x和y引用的对象没有发生变化，返回调用x.equals(y)应该返回同样的结果。
+        5）对于任何非空引用x，x.equals(null)应该返回false
 
+       上面的特性中，对于第二条对称性来说，当参数不属于同一个类的时候需要仔细地思考一下。假设e是Employee的对象，而m是Mananger对象。并且两个对象具有相同的姓名，薪水和雇佣日期。
+    如果e.equals(m)中使用了instanceof 来检测，则返回true（Manager 是Employee的子类）。但是这意味着，反过来m.equals(e)也应该是true。这就使得Manager类受到了束缚。
+    下面从两个截然不同的情况看一下这个问题：
+        如果子类能够拥有自己的相等概念，则对称性需求将强制采用getClass 进行检测。
+        如果有超类决定相等的概念，那么久可以使用instanceof进行检测，这样可以在不同子类对象之间进行相等比较。（比如AbstractSET的两个子类TreeSet 和 HashSet）
+    但是，假设使用雇员的ID作为相等的检验标准，并且这个相等的概念适用于所有的子类，就可以使用instanceof进行检测，并应该在Employee.equals声明为final。
 
+    大意就是说，对于有子类和超类的equals比较时候，应该在父类写好equals并设置为final,并且有统一的比较标准。这个时候是可以使用instanceof的
+    如果想要编写一个完美的equals方法：查看 P169 注释中的建议。
+2.3 hashCode方法
+    由于hashCode方法定义在Object类中，因此每个对象都有一个默认的hash值，其值为对象的存储地址。
+    每个类也可以覆盖Object类中的hashCode方法，比如：
+        @Override
+        public int hashCode() {
+            return Objects.hash(name,salary,hireDay);
+        }
+    这样hashCode就变成了由内容导出的了。同理在String中的hashCode就是内容导出，而StringBuilder类中就没有定义hashCode，即默认为对象存储地址。例如：
+
+        String s = "OK";  // hashCode == 2556
+        StringBuilder sb = new StringBuilder(s);  // hashCode == 20526976
+        String t = new String("OK");  // hashCode == 2556
+        StringBuilder tb = new StringBuilder(t);  // hashCode == 20527144
+    如果重新定义equals方法，就必须重新定义hashCode方法，以便用户可以将对象插入到散列表中。    equals与hashCode必须一致：如果x.equals(y)返回true，那么两者的hashCode就必须具有相同的值。（但是地址不一定一样）
+    如果需要自定义hashCode可以使用objects.hashCode。他可以组合多个散列值。
+
+2.4 toString方法
+常见写法：类名[属性=属性,属性=属性,...]
+
+    @Override
+    public String toString()
+    {
+        return getClass().getName() + "[name=" + name + ",salary=" + salary + ",hireDay=" + hireDay + "]";
+    }
+
+用法：
+    println(x)和println(x.toString)是一个效果。
+
+特例：数组继承了object类的toString方法， 数组类型将按照旧的格式打印，这个时候我们需要使用Arrays.toString方法对其进行修正。例如：
+
+        int[] nums = {2,3,4,5,6,7}; // 这里使用的是{} 不是[]
+        System.out.println(nums);  //  [I@6d78f375  , 其中 [I 表示int
+        String trans = Arrays.toString(nums);
+        System.out.println(trans);  //   [2, 3, 4, 5, 6, 7]
+
+在debug中常常使用toString方法，其常用方法为：
+        Logger.global.info("Current position = " + position);
+
+----------------------------------------------------------------------------------------------------------------------
+
+3. 泛型数组列表
+在Java中，允许在运行时确定数组的大小。具体方法是使用java中另外一个被称为ArrayList的类。它使用起来有点像数组，但在天津爱和删除元素时，具有自动调节数组容量的功能，而不需要为此来编写任何代码。
+
+ArrayList是一个采用类型参数（type parameter）的泛型类（generic class）。为了制定数组列表保存的元素对象类型，需要用一对尖括号将类名括起来加在后面。
+例如，声明和狗仔一个保存employee对象的数组列表：
+        ArrayList<Employee> staff = new ArrayList<Employee>();
+
+实际上，右边的Employee可以省略，并且初始化初始容量为100：
+        ArrayList<Employee> staff = new ArrayList<>(100);  // 也可以使用staff.ensureCapacity(100)进行存储元素数量预分配
+
+这个100表示分配了一个包含100个对象的内部数组，可以调用100次add来添加元素到数组列表中：
+        staff.add(new Employee("Bob",...))
+
+实际上，ArrayList类似于C++的vector模板。两者都是泛型类型。但C++的vector模板为了方便访问元素重载了[]运算符。由于java没有运算符重载，所以必须调用显式的方法。另外，C++向量是值拷贝，即如果a和b是两个向量，赋值操作a=b将会构造一个与b长度相同的新向量a，并将所有元素由b拷贝到a。而在java中，这条赋值语句的操作结果是让b和a引用同一个数组列表。
+ArrayList除了初始化函数以外还有以下方法：
+    boolean add(E obj);
+    int size(); //返回存储在数组列表中的当前元素数量。（<=列表容量）
+    void ensureCapacity(int capacity); // 确保数组列表在不重新分配存储空间的情况下就能够保存给定数量的元素。
+    void trimToSize(); // 将数组列表的存储容量削减到当前尺寸。
+
+3.1 访问数组列表元素
+使用set和get方法实现改变或访问数组元素的操作（[]语法格式无效）：
+    staff.set(i,harry); // 等价于 a[i] = harry;
+    Employee e = staff.get(i);// 等价于 Employee e = a[i];
+
+另外，
 
 
