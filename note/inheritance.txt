@@ -281,9 +281,42 @@ ArrayList除了初始化函数以外还有以下方法：
 @SuppressWarning("unchecked")ArrayList<Integer> list=t1.b("result");
 
 
-3.3 对象包装器与自动包装箱
-有时，需要将int这样的基本类型转化为对象，例如Integer类对应基本类型int。通常，这些类称为包装器（wrapper），这些对象包装类拥有很明显的名字：Integer，
+4 对象包装器与自动包装箱
+有时，需要将int这样的基本类型转化为对象，例如Integer类对应基本类型int。通常，这些类称为包装器（wrapper），这些对象包装类拥有很明显的名字：Integer，Long,Float,Double,Short,Byte,Character,Void 和Boolean(前六个类派生于公共的超类Number)
+另外，对象包装器是不可变的，即一旦构造了包装器，就不允许更改包装在其中的值。同时，对象包装器类还是final，因此不能定义他们的子类。
 
+注意：由于每个值分别包装在对象中，所以ArrayList<Integer>的效率远远低于int[]数组。
+幸运的是，如
+    list.add(3);
+将自动地变换成
+    list.add(Integer.valueof(3));
+这种变换被称为自动装箱（autoboxing/autowrapping自动打包）。
+反之亦然。
+    int n = list.get(i); //与下面等价
+    int n = list.get(i).intValue();
+
+另外自动装箱还有几点需要说明：
+    1. 由于包装器类引用可以为null，所以自动装箱可能会跑出一个NullPointerException异常。
+    2. 如果在一个条件表达式中混合使用Integer和Double类型，Integer值就会拆箱，提升为double，再装箱为Double
+    3. 装箱和拆箱是编译器认可的，而不是虚拟机。编译器在生成类的字节码时，插入必要的方法调用。虚拟机只是执行这些字节码。
+    4. 可以将数字字符串转化为数值：int x = Integer.parseInt(s); // 这里的parseInt是静态方法！
+    5. 另外虽然Integer是包装类，但是并不能用来修改数值参数。在传参时候依然传递的是数字而不是地址。
+
+5. 参数数量可变的方法
+在printf方法中是这么定义的：
+    public PrintStream printf(String format, Object ... args) {
+        return format(format, args);
+    }
+
+这里的...是java代码的一部分，它表明这个方法可以接收任意数量的对象（除fmt参数之外）
+实际上，pritnf方法接收两个参数，一个是格式字符串，另一个是Object[]数组，其中保存着所有的参数。换句话说，对于printf的实现者来说，Object...参数类型和Object[]完全一样。
+
+6. 枚举类
+定义枚举类型：
+    public enum Size {SMALL, MEDIUM, LARGE, EXTRA_LARGE};
+实际上，这个声明定义的类型是一个类，它刚好有4个实例，在此尽量不要构造新对象。因此在比较两个美剧类型的值时，永远不要调用equals，而直接使用"=="就可以了。
+另外，所有枚举类型都是Enum类的子类。他们继承了这个类的许多方法。其中最有用的是toString。如果需要的话，可以在枚举类型中添加一些构造器，方法和域。
+    static Enum valueOf(class enumClass, String name) //返回指定名字、给定类的枚举常量。
 
 
 
