@@ -232,12 +232,60 @@ ArrayList除了初始化函数以外还有以下方法：
     int size(); //返回存储在数组列表中的当前元素数量。（<=列表容量）
     void ensureCapacity(int capacity); // 确保数组列表在不重新分配存储空间的情况下就能够保存给定数量的元素。
     void trimToSize(); // 将数组列表的存储容量削减到当前尺寸。
+    boolean add(int index, E obj)  //在位置index插入元素obj
+    void set(int index, E obj)  // 将位置index替换掉
+    E get(index)  // 获得位置元素
+    E remove(index)  // 删除第index位置的元素，并将后面的前移，被删除的元素由返回值返回
+    另外，ArrayList可以使用for each循环遍历数组列表。
+
 
 3.1 访问数组列表元素
 使用set和get方法实现改变或访问数组元素的操作（[]语法格式无效）：
     staff.set(i,harry); // 等价于 a[i] = harry;
     Employee e = staff.get(i);// 等价于 Employee e = a[i];
 
-另外，
+另外，set方法只能用于替换，如果想要添加一个元素还是需要使用add，如果直接使用set试图进行添加元素会报错。
+
+一种一举两得的技巧是：先用ArrayList创建全部的数组对象，然后使用toArray的方法将数组元素拷贝到一个数组中。
+    ArrayList<X> list = new ArrayList<>();
+    while(...)
+    {
+        x = ...;
+        list.add(x);
+    }
+
+    X[] a = new X[list.size()];
+    list.toArray(a);
+
+
+3.2 类型化与原始数组列表的兼容性
+如何与没有使用类型参数（ArrayList没有类型参数）的遗留代码交互操作也是一个大问题。例如：
+    public class EmployeeDB
+    {
+        public void update(ArrayList list){...}
+        public ArrayList find(String query){...}
+    }
+
+这里可以将一个类型化的数组列表传递给update方法。这种方法尽管没有警告，但是不安全。
+    ArrayList<Employee> staff = ...;
+    employeeDB.update(staff);
+
+相反，将原始地ArrayList赋给一个类型化的ArrayList会得到一个警告。(为了看到警告信息，应该将编译选项设置为-Xlint:unchecked)
+    ArrayList<Employee> result = employeeDB.find(query); // yields warning
+
+你可能会想使用强制类型转化避免这个警告，这样实际上会得到另外一个警告。
+    ArrayList<Employee> result = (ArrayList<Employee>)employeeDB.find(query); // yields another warning
+这些是由于编译器出于对兼容性的考虑，在堆类型转换进行检查之后，如果没有发现违反规则的现象，就将所有的类型化数组列表转换为原始ArrayList对象。在程序运行时，所有的数组列表都是一样的，即没有虚拟机中的类型参数。
+
+就是说，如果编译器觉得没有问题，就会全部变为原始ArrayList对象，这样容易兼容。所以你这个强制转换是无效的。因此，当遇到警告时，只要确保警告不会造成严重后果就可以了。在确定不会造成严重后果后，可以加上注释。
+@SuppressWarning("unchecked")ArrayList<Integer> list=t1.b("result");
+
+
+3.3 对象包装器与自动包装箱
+有时，需要将int这样的基本类型转化为对象，例如Integer类对应基本类型int。通常，这些类称为包装器（wrapper），这些对象包装类拥有很明显的名字：Integer，
+
+
+
+
 
 
