@@ -318,7 +318,80 @@ ArrayList除了初始化函数以外还有以下方法：
 另外，所有枚举类型都是Enum类的子类。他们继承了这个类的许多方法。其中最有用的是toString。如果需要的话，可以在枚举类型中添加一些构造器，方法和域。
     static Enum valueOf(class enumClass, String name) //返回指定名字、给定类的枚举常量。
 
+7. 反射
+反射库（reflection library）提供了一个非常丰富且精心设计的工具集，以编写能顾动态操纵java代码的程序。这项功能被大量地应用于javaBeans中，它是java组件的体系结构。使用反射，java可以支持VB用户习惯使用的工具。特别是在设计或运行中添加新类时，能够快速地应用开发工具动态地查询新添加类的能力。
+能够分析类能力的程序称为反射（reflective）。反射机制的功能极其强大， 在下面可以看到，反射机制可以用来：
+    在运行时分析类的能力。
+    在运行时查看对象，例如，编写一个toString方法供所有类使用
+    实现通用的数组操作代码。
+    利用method对象，这个对象很像C++中的函数指针。
 
+7.1 Class类
+在程序运行期间，java运行时系统使用为所有的对象维护一个被称为运行时的类型标识。这个信息跟踪着每个对象所属的类。虚拟机利用运行时类型信息选择对应的方法执行。
+然而，可以通过专门的java类访问这些信息。保存这些戏的类被称为Class，这个名字很容易让人混淆。Object类中getClass()方法将会返回一个Class类型的实例。
+    Employee e;
+    ...
+    Class c1 = e.getClass();
+如同用一个Employee对象标识一个特定的雇员属性一样，一个Class对象将表示一个特定类的属性。常用的Class方法是getName。这个方法将返回类的名字，如果类在一个包里，包的名字也作为类名一部分返回。例如：
+    System.out.println(e.getClass().getName() + " + " + e.getName());  // (com.chapter_5._3_equals.)Employee + Harry Hacker
+
+还可以调用静态方法forName获得类名对应的Class对象。
+    String className = "java.util.Random";
+    Class c1 = Class.forName(className);
+当然，这个方法只有在className是类名或者接口名才能够执行。否则，forName方法将跑出一个checked exception，因此使用这个方法的时候，应该提供一个异常处理器（exception handler）
+
+注：在启动时，包含main方法的类被加载。它会加载所有需要的类。这些被加载的类又要加载它们需要的类，以此类推。对于一个大型的应用程序来说，这将会消耗很多时间，用户会因此感到不耐烦。可以使用下面的这个技巧给用户一种启动速度比较快的幻觉。不过要确保main方法的类没有显式地引用其他类。首先，启动一个启动画面；然后，通过调用Class.forName手工地加载其他类。
+
+获得Class类对象的第三种方法很简单，如果T是任意的java类型,T.class将代表匹配的类对象，例如：
+    Class c1 = Random.class;  // if you import java.util.*;
+    Class c2 = int.class;
+    Class c3 = Double[].class;
+请注意，一个Class对象实际上表示的是一个类型，而这个类型未必一定是一种类。例如上面的int不是类，但是int.class是Class类型的一个对象。Class类实际上是一个泛型类。
+
+注：鉴于历史原因，getName方法在应用于数组类型的时候回返回一个很奇怪的名字。
+    Double[].class.getName 返回"[Ljava.lanng.Double;"。
+
+虚拟机为每个类管理一个Class对象。因此，可以利用 == 运算符实现两个类对象比较的操作。另外还有一个很有用的方法是newInstance()，可以用来动态地创建一个类的实例，例如：
+    if (e,getClass() == Employee.class) ...
+    e.getClass().newInstance();  //创建了一个与e具有相同类类型的实例。newInstance调用默认的构造器（没参数的构造器）初始化新创建的对象。如果没有这个构造器会抛出异常。
+
+可以将forName与newInstance配合使用，可以根据存在字符串中的类名创建一个对象。
+    String s =  "java.util.Random";
+    Object m = Class.forName(s)newInstance();
+如果需要以这种方式向希望按名称创建的类的构造器提供参数，就不需要使用上面那条语句，而必须使用Constructor类中国年的newInstance方法。
+
+7.2 捕获异常
+异常有两种类型：未检查异常和已检查异常。对于已检查的异常，编译器将会检查是否提供了处理器。然而，有很多常见的异常，例如，访问null应用，都属于未检查异常。编译器不会查看是否为这些错误提供了处理器。，
+并不是所有的错误都是可以避免的，如果竭尽全力还是发生了异常，编译器就要求提供一个处理器。Class.forName方法就是一个抛出已检查异常的例子。
+将一个或多个方法调用放在try块中，然后在catch子句中提供处理器代码
+try
+{
+    statements that might throw exceptions
+}
+catch (Exception e)
+{
+    e.printStackTrace();  //handler action
+}
+这里利用Throwable类的printStackTrace方法打印出栈的轨迹。Throwable类是Exception类的超类。
+
+7.3利用反射分析类的能力
+在java.lang.reflect包中有三个类Field,Method和Constructor分别用于描述类的域、方法和构造器。(还有Modifier类)
+这三个类都有一个叫做getName的方法，用来返回项目的名称。Field类有一个getType方法，用来返回描述域所属类型的Class对象。Method和Constructor类有能够报告参数类型的方法，Method类还有一个可以报告返回类型的方法。这三个方法还有一个叫getModifiers的方法，它将返回一个整数值，用不同的位开关描述public和static这样的修饰符使用状况。林外还可以利用java.lang.reflect包中的Modifier类的静态方法分析getModifiers返回的整型数值。例如，可以使用Modifier类中的isPublic,isPrivate或isFinal判断方法或构造器是否是public、private或final。另外可以利用Modifier.toString方法吧修饰符打印出来。
+Class类中的getFields、getMethods和getConstructor方法将分别返回类提供的public域、方法和构造器数组，其中包括超类的公有成员。Class类的getDeclareFields、getDeclareMethods和getDeclaredConstructor方法将会分别返回类中国女生们的全部域，方法和构造器，其中包括私有和受保护成员，但不包括超类的成员。
+
+7.4 在运行时使用反射分析对象
+查看对象域的关键方法是Fields类中的get方法。如果f是Field类型的对象，obj是某个包含f域的类的对象，f.get(obj)将返回一个对象，其值为obj域的当前值。具体代码如下：
+    Employee harry = new Employee("Harry Hacker", 35000, 10, 1, 1989);
+    // the class object representing Employee
+    Class c1 = harry.getClass();
+    // the name field of the Employee class
+    Field f = c1.getDeclaredField("name");
+    // the value of the name field of the harry obj, i.e., String obj "Harry Hacker"
+    Object v = f.get(harry);
+实际上，这个代码是有问题的，由于name是一个私有域，所以get方法会抛出一个IllegalAccessException。只有利用get方法才能得到可访问域的值，除非拥有访问权限，否则java的安全机制只允许查看任意对象有哪些域，热不允许读取他们的值。
+
+反射机制的默认行为受限于java的访问机制。为了达到这个目的，需要调用Field、Method或Constructor对象的setAccessible方法。例如：
+    f.setAccessible(true);  // now OK to call f.get(harry);
 
 
 
