@@ -391,7 +391,55 @@ Class类中的getFields、getMethods和getConstructor方法将分别返回类提
 实际上，这个代码是有问题的，由于name是一个私有域，所以get方法会抛出一个IllegalAccessException。只有利用get方法才能得到可访问域的值，除非拥有访问权限，否则java的安全机制只允许查看任意对象有哪些域，热不允许读取他们的值。
 
 反射机制的默认行为受限于java的访问机制。为了达到这个目的，需要调用Field、Method或Constructor对象的setAccessible方法。例如：
-    f.setAccessible(true);  // now OK to call f.get(harry);
+    f.setAccessible(true);  // now OK to call f.get(harry);为反射对象设置可访问标志。flag为true表明屏蔽java语言的访问检查，使得对象的私有属性也可以被查询和设置。
+
+7.5 使用反射编写泛型数组代码
+java.lang.reflect包中的Array类允许动态地创建数组。但是如果直接创建Object数组然后转为具体的类会throw一个ClassCastException异常。
+
+Java数组会记住每个元素的类型，即创建数组时new表达式中使用的元素类型。将一个Employee[]临时地转化成Object[]数组，然后转化回去是可以的。但是一开始就创建Object[]的数组却永远不能转换为Employee[]数组。为了编写这类通用的数组代码，需要能够创建与原数组类型相同的新数组。
+为此，需要java.lang.reflect包中的Array类的一些方法。其中最关键的是Array类中的静态方法newInstance，他能够构造新数组。在调用它时必须通过两个参数，一个是数组元素类型，一个是数组的长度。
+    Object newArray = Array.newInstance(commentType, newLength);
+
+Array.getLength(a)可以获得数组长度。而为了获得新数组元素类型，就需要以下工作：
+    1）首先获得a数组的类对象。
+    2）确认他是一个数组
+    3）使用Class类的getComponentType方法确定数组类型。
+
+7.6 调用任意方法
+反射机制允许你调用任意方法。在Method类中有一个invoke方法，他允许调用包装在当前Method对象中的方法。例如：
+    Object invode(Object obj, Object .. args)
+    String n =(String) m1.invoke(harry);
+
+我们可以通过getMethod获得Method对象。下面说明了如何获得Employee类的getName方法和raiseSalary方法的方法指针：
+    Method getMethod(String name, Class ... parameterTypes)
+    Method m1 = Employee.class.getMethod("getName");
+    Method m2 = Employee.class.getMethod("raiseSalary",double.class);
+
+8 继承的设计技巧
+1.将公共操作和域放在超类
+
+2.不要使用受保护的域
+    因为1.子类集合是无限制的，任何一个人都能够由某个类派生一个子类，并编写diamante以访问protected 的实例域，从而破坏封装性。2.在java中，在同一个包中所有类都可以访问protected域。
+
+3.使用继承实现 “is-a” 关系
+
+4.除非所有成绩的方法都有意义，否则不要乱用继承
+假设想编写一个Holiday类。无疑，每个假日也是一日，并且一日可以使用Gregorian Calendar类的实例表示，因此可以使用继承
+    class Holiday extends GregorianCalender{ ... }
+但是在继承操作中，假日集不是封闭的，在GregorianCalender中有一个公有方法可以将假日变化为非假日。因此继承对这个例子就不合适。
+
+5.在覆盖方法时，不要改变预期的行为
+    置换原则不仅应用于语法，也可以应用于行为。
+
+6.使用多态，而非类型信息
+无论什么时候，对于下面这种类型的代码都应该考虑使用多态性。
+if (x is of type1)
+    act1(x);
+else if (x is of type2)
+    act2(x);
+如果act1与act2表示相同的概念，就应该为该概念定义一个方法并放在超类或者接口中，然后，就可以调用x.action()
+
+7.不要过多地使用反射
 
 
 
