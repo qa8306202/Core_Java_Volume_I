@@ -9,8 +9,11 @@ public class EmployeeSortTest {
         staff[0] = new Employee("Carl Craker",35000);
         staff[1] = new Employee("Harry Hacker",50000);
         staff[2] = new Employee("Tommy Tester",40000);
-
-        Arrays.sort(staff);
+        // 判断Employee接口是否实现了Comparable
+        if (staff[0] instanceof Comparable)
+            Arrays.sort(staff);
+        else
+            System.out.println("You dont implement Comparable!");
 
         // print out info about all Employee objs
         for(Employee e: staff){

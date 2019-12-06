@@ -21,6 +21,12 @@ public class SsozhEmployee implements ISsozhComparable<SsozhEmployee>{
             this.salary +=raise;
         }
 
+    /**
+     *
+     * @param other 与其他进行比较工资排序
+     * @return
+     */
+    @Override
         public int ssozhCompareTo(SsozhEmployee other) {
             return Double.compare(salary,other.salary);
         }

@@ -1,0 +1,127 @@
+6 接口、lambda表达式与内部类
+1 接口
+1.1 接口概念
+在java中，接口不是类，而是对类的一组需求描述，这些类要遵从接口描述的统一格式进行定义。“如果类遵循某个特定接口，那么履行这项服务”。
+以Array类中的sort方法承诺可以对对象数组进行排序，但要求满足“对象所属的类必须实现了Comparable接口”，以下是Comparable接口代码：
+    public interface Comparable<T>{
+        int compareTo(T other);  // parameter has type T, compareTo就是public
+    }
+
+接口中的所有方法自动地属于public。因此，在接口中声明方法时，不必提供关键字public。另外一个接口可能包含多个方法，在接口中还可以定义常量，但接口绝不能含有实例域。提供实例域和方法实现的任务应该由实现接口的那个类来完成。
+因此，可以将接口看成是没有实例域的抽象类。但这两个概念还是有一定区别的
+为了让类实现一个接口，通常需要下面两个步骤：
+    1）将类声明为实现给定的接口。
+    2）对接口中的所有方法进行定义。
+    将类声明为实现某个接口，需要使用关键字implements:
+        class Employee implements Comparable
+在接口声明中，不必将方法声明为public， 但在实现接口时，必须吧方法声明为public，否则编译器将认为这个方法的访问属性是包可见性，即类的默认访问属性，之后编译器就会给出试图提供更严格的访问权限的警告信息。
+我们已经知道，要让一个类使用排序服务必须让他实现compareTo方法。但是为什么不能在Employee类直接提供一个compareTo方法，而必须实现Comparable接口呢?
+主要原因是在于java是一种强类型（strongly typed）语言。在调用方法的时候，编译器会检查这个方法是否存在。在sort方法中可能存在下面这样的语句：
+    if(a[i].compareTo(a[j] > 0)){
+        // rearrange a[i] and a[j]
+        ...
+    }
+    为此，编译器必须要确认a[i]一定有compareTo方法。如果a是一个Comparable对象的数组，就可以确保拥有compareTo方法，因此每个市县Comparable接口的类都必须提供这个方法的定义。
+
+1.2接口的特性
+接口不是类，尤其不能使用new运算符实例化一个接口：
+    x = new Comparable(...); //ERROR
+然而，尽管不能构造接口的对象，却能声明接口的变量：
+    Comparable x; //OK
+接口变量必须引用实现了接口的类对象：
+    x = new Employee(...); //OK，provided Employee implements Comparable
+接下来，如同使用instanceof 检测一个对象是否属于某个特定类一样，也可以使用instance检查一个对象是否实现了某个特定的接口：
+    if(anObj instanceof Comparable){...}
+
+也可以建立类的继承关系一样，接口也可以被扩展。另外虽然接口不能包含实例域或静态方法，但却可以包含常量。例如：
+    public interface Moveable{
+        void move(double x, double y);
+    }
+
+    public interface Powered extends Moveable{
+        double milesPerGallon();
+        double SPEED_LIMIT = 95; // a public static final constant
+    }
+    与接口中的方法都自动地被设置为public一样，接口中的域将被自动的设置为public static final。
+尽管每个类只能拥有一个超类，但却可以实现多个接口。这就为定义类的行为提供了极大的灵活性。例如：
+    class Employee implements Cloneable, Comparable
+
+1.3 接口与抽象类
+java不允许一个类有多个超类，即不支持多重继承（multiple inheritance）。
+
+1.4 静态方法
+通常都是将静态方法放在伴随类中。在标准库中，会看到成对出现的接口和实用工具类。如Collection/Collections或Path/Paths
+
+1.5 默认方法
+可以为接口方法提供一个默认实现。必须使用default 修饰符标记这样一个方法。
+    public interface Comparable<T>{
+        default int compareTo(T other){return 0;}
+            //By default, all elements are the same
+    }
+默认方法会在实现类中覆盖掉，用处在于默认设置成什么也不做，这样可以让实现这个接口的程序员只需要为他们真正关心的事件覆盖相应的方法。
+默认方法的一个重要用法是“接口演化”（interface evolution） 。举例说明：
+假如你很久以前提供了一个这样的类：
+    public class Bag implements Collection
+后来，javaSE 中又为这个接口Collection增加了一个stream方法。如果这个stream方法不是一个默认方法，那么Bag类将不能编译，因为它没有实现这个新方法。
+因为，为接口增加一个非默认方法不能保证“源代码兼容”（source compatible）。不过，如果没有重新编译这个类，而只是使用之前的JAR包，这个类还是可以正常加载，尽管没有这个新方法。（为接口增加方法可以保证“二进制兼容”）。不过，如果程序在一个Bag实例上调用stream方法，就会出现一个AbstractMethodError.
+将方法实现为一个默认方法就可以解决这两个问题。
+
+1.6 解决默认方法冲突
+如果先在一个接口将一个方法定义为默认方法，然后又在超类或另外一个接口中定义了同样的方法，这样冲突的情况下，Java规则如下：
+    1）超类优先。如果超类提供了一个具体方法，同名而且有相同参数类型的默认方法会被忽略。
+    2）接口冲突。如果一个超接口提供了一个默认方法，另一个接口提供了一个同名而且参数类型相同的方法，必须覆盖这个方法来解决冲突。
+
+2 接口示例
+2.1接口与回调
+回调（callback）是一种常见的设计模式。在java.swing包中有个Timer类，可以使用它在到达给定时间间隔内发出通告。这时采取相应的动作（即回调）。
+在java标准库中的类采用的是面向对象的方法。它将某个类的对象传递给定时器，然后，定时器调用这个对象的方法。由于对象可以携带一些附加的信息，所以传递一个对象比传递一个函数要灵活的多。
+当然，定时器需要知道调用哪个方法，并要求传递的对象所属的类实现了java.awt.event包的ActionListener接口。下面是这个接口：
+    public interface ActionListener{
+        void actionPerformed(ActionEvent event);
+    }
+    当到达指定的时间间隔，定时器就调用actionPerformed方法。(所以回调对象要实现ActionListener这个接口)
+
+2.2comparator接口
+Arrays.sort方法有两个版本，分别使用了comparable接口和comparator接口。
+comparator是在comparable已经被用过后，又想添加的一种比较方法的接口，我感觉是官服和私服的区别吧~
+
+2.3对象克隆
+copy:两个变量指向同一个对象地址
+clone:两个变量指向不同对象的地址，但是这两个对象的域是一样的。
+Object的clone方法表面看对象是不共享信息的，但是如果对象包含子对象的引用，拷贝域就会得到相同子对象的另一个引用，这样一样，原对象和克隆的对象仍然会共享一些信息。（这相当于浅拷贝）
+
+Object的默认克隆操作是“浅拷贝”，并没有克隆对象中引用的其他对象（图6-2）。一下两种情况浅拷贝是安全的：
+    1）如果原对象和浅克隆对象共享的子对象是不可变的，那么这种共享就是安全的。如String对象属于一个不可变的类。
+    2）或者在生命周期中，子对象一直包含不变的对象，没有更改器方法会改变他，也没方法会生成它的引用，这种情况下也是同样安全的。
+
+通常子对象都是可变的，必须重新定义clone方法来建立一个深拷贝，同时克隆所有子对象。
+对于每一个类，需要确定：
+    1）默认的clone方法是否满足要求；
+    2）是否在可变的子对象上调用clone来修补默认的clone方法
+    3）是否不该使用clone
+实际上第3个选项是默认选项。如果选择第1项或第2项，类必须：
+    1）实现cloneable接口；
+    2）重新定义clone方法，并指定public访问修饰符。（受保护访问的规则比较奇妙，子类只能调用受保护的clone方法来克隆他自己的对象。）！！！
+
+注：Cloneable接口是java提供的一组标记接口（tagging interface）之一。（也称为标记接口（marker interface））？？？？建议你自己的程序中不要使用标记接口。
+
+即使clone的默认浅拷贝实现能够满足需求，还是需要实现Cloneable接口，将clone重新定义为public，再调用super.clone
+
+3. lambda表达式
+java中的一种lambda表达式形式：
+
+参数 -> 表达式
+
+例如(这里的表达式是一个代码块，可以不需要实现类就可以使用的代码块)：
+    (String first, String second) ->
+    {
+        if (first.lengh() < second.length()) return -1;
+        else if (first.length() > second.length()) return 1;
+        else return 0;
+    }
+
+即使lambda表达式没有参数，仍然需要提供空括号，就像无参数方法一样。
+
+    ()->{for(int i=100;i>=0;i--) sout(i);}
+
+
