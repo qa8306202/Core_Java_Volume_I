@@ -120,8 +120,90 @@ java中的一种lambda表达式形式：
         else return 0;
     }
 
-即使lambda表达式没有参数，仍然需要提供空括号，就像无参数方法一样。
+即使lambda表达式没有参数，仍然需要提供空括号，就像无参数方法一样。无需指定lambda表达式的返回类型，返回类型总是会由上下文推到得出。
 
     ()->{for(int i=100;i>=0;i--) sout(i);}
+
+3.3 lambda表达式与接口是兼容的。对于只有一个抽象方法的接口，需要这种接口的对象时，就可以提供一个lambda表达式，这种接口称为函数式接口（functional interface）
+例如Arrays.sort方法，它的第二个参数需要一个comparator实例，Comparator就是只有一个方法的接口，所以可以提供一个lambda表达式：
+    Arrays.sort(words, (first, second)->first.length()-second.length());
+
+注意不能把lambda表达式赋给Object的变量，Object不是一个函数式接口。
+另外，Java API在java.util.function包中定义了很多非常通用的函数式接口。
+
+3.4方法引用
+在lambda表达式中：
+    x->System.out.println(x)                   ||            (x,y) -> Math.pow(x,y)
+等价于
+    System.out::println                        ||            Math::pow
+这里上面一行是lambda表达式，下面等价是方法引用（method reference）。方法引用有三种情况：
+    object::instanceMethod
+    Class::staticMethod
+    Class::instanceMethod
+前两种等价于lambda表达式。如上例。对于第三种情况，第一个参数会变成方法的目标。例如
+String::compareToIgnoreCase == (x,y)->x.compareToIgnoreCase(y)
+
+另外还有this::method  super::instanceMethod 的方法引用
+
+3.5构造器引用
+构造器引用与方法引用很类似，只不过方法名为new。例如，Person::new是Person构造器的一个引用
+可以用数组类型建立构造器引用。例如， int[]::new是一个构造器引用，他有一个参数即数组的长度。这等价于 x->new int[x]
+（这部分和上面的方法引用 不是很懂）
+
+3.6变量作用域
+lambda表达式有三个部分：
+    1）一个代码块
+    2）参数
+    3）自由变量的值，这里指非参数而且不在代码中定义的变量
+
+关于代码块以及自由变量值有一个术语：闭包（closure）
+这里有一规则：lambda表达式中捕获的变量必须实际上是最终变量（effectively final）。实际上的最终变量是指，这个变量初始化之后就不会再为它赋新值。
+另外在方法中 不能有两个同名的局部变量，因此，lambda表达式中同样也不能有同名的局部变量。
+
+
+3.7处理lambda表达式
+当学习了如何生成lambda表达式，以及如何把一个lambda表达式传递到需要一个函数接口的方法。下面看如何编写方法处理lambda表达式。
+使用lambda表达式的重点是延迟执行（deferred execution）。延迟执行的原因有很多，如：
+    在一个单独的线程中运行代码；
+    多次运行代码；
+    在算法的适当位置运行代码（例如，排序中的比较操作）；
+    发生某种情况时执行代码（如，点击了一个按钮，数据到达等等）
+    只在必要时才运行代码。
+
+要接受一个lambda表达式，需要选择（偶尔可能需要提供）一个函数式接口。表6-1列出了Java API中提供的最重要的函数式接口。
+
+这部分还是无法理解的，我以为lambda表达式可能是Python的一样，现在看来远比Python的lambda表达式复杂。这里等看完Core_Java_Volume_II 在回来说吧
+
+3.8再谈Comparator
+略
+
+4内部类
+内部类（inner class）是定义在另一个类中的类。使用内部类的原因：
+    1.内部类方法可以访问该类定义所在的作用域中的数据，包括私有数据。
+    2.内部类可以对同一个包中的其他类隐藏起来。
+    3.当想要定义一个回调函数且不想编写大量代码时，使用匿名（anonymous）内部类比较便捷。
+
+C++有嵌套类。一个被嵌套的类包含在外围类的作用域内。嵌套类是一种类之间的关系，不是对象之间的关系。嵌套类有两个好处：命名控制和访问控制。
+对于一个私有内部类，该类对于其他的代码均不可见，因此该类的数据域可设计为公有的，依然是安全的。这些数据域中的数据只能被外围类中的方法访问。在java中只有内部类可以实现这样的控制。
+java内部类比C++的嵌套类更丰富在：内部类的对象有一个隐式引用，它引用了实例化该内部对象的外围类对象。通过这个指针，可以访问外围类对象的全部状态。
+
+4.1 使用内部类访问对象状态
+    内部类使用外围类的数据时，相当于内部类存在一个指针指向外围类的对象，然后外围类可以通过这个“指针”（外围类引用的正规语法叫OuterClass.this，OuterClass是外围类的名称），来获取外围类对象的数据。
+    另外虽然存在内部类，这并不意味着每个外围类都有一个内部类的实例域。（看例子_innClass_.InnerClassTest.java）
+
+4.2内部类的特殊语法规则
+(在内部类内部)使用外围类引用的正规语法表达式为：
+    OuterClass.this
+反过来，（不再内部类内部）可以采用下列语法格式更加明确地编写内部对象的构造器：
+    outerObject.new InnerClass(construction parameters)
+其中这里的outerObject可以是this也可以是某个具体的对象，例如：
+    ActionListener listener = this.new TimePrinter();
+
+注意：内部类中声明的所有静态域都必须是final。因为我们希望一个静态域只有一个实例，不过对于每个外部对象，会分别有一个单步的内部类实例。如果这个域不是final，它可能就不是唯一的。
+    另外，内部类不能有static方法。
+
+4.3内部类是否有用，必要和安全
+    内部类是一种编译器现象，与虚拟机无关。编译器将会把内部类翻译成$分隔外部类名与内部类名的常规类文件，而虚拟机对此一无所知。
+    这里举了一个java编译器如何反射内部类的过程。有时间搞懂！
 
 
