@@ -16,6 +16,13 @@
 * _5_reflection includes examples (in the book) 5-13 ~ 5-17
 
 ## Chapter 6 Interface,Lambda Expression and Inner Classes
+* In this chapter,the sections is the same.The content is so hard to me,so I haven't completely understood "lambda", "inn class" and "proxy".I'll be back!
+* in the package,I add my own test program ,which is named ssozh.It uses to understand knowledge point in that section.
+
+**Because I want to accelerate my plant,I decided to skip charpter 7,8.I'll back when I finish chapter 9.**
+
+## Chapter 9 Collection
+**In this chapter I want to combine this book with *Introduction to Algorithm*. So this chapter is the fundamental of algorithm.I will continues my data structures learning in another project.**
 
 
  
