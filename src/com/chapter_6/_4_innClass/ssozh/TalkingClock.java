@@ -20,6 +20,8 @@ public class TalkingClock {
         this.beep = beep;
     }
 
+
+
     public void start(){
         ActionListener listener = this.new TimerPrinter();
         Timer t = new Timer(interval, listener);
@@ -33,10 +35,12 @@ public class TalkingClock {
      * TimePrinter类没有实例域或者名为beep的变量，取而代之的是beep引用了创建TimePrinter的TalkingClock对象的域。
      * 这里相当于内部类默认生成了一个构造器outer = TalkingClock clock; beep实际上是out.beep
      */
-    public class TimerPrinter implements ActionListener{
+     public class TimerPrinter implements ActionListener{
+        private static final int x=0;  // 这是一个静态域 ，也就是说如果+static,必须加final
         public void actionPerformed(ActionEvent event){
             System.out.println("At the tone, the time is " + new Date());
             if(beep) Toolkit.getDefaultToolkit().beep();  // beep 是TalkingClock.this.beep的简写
         }
+
     }
 }

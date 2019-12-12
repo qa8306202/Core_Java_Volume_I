@@ -204,6 +204,94 @@ java内部类比C++的嵌套类更丰富在：内部类的对象有一个隐式�
 
 4.3内部类是否有用，必要和安全
     内部类是一种编译器现象，与虚拟机无关。编译器将会把内部类翻译成$分隔外部类名与内部类名的常规类文件，而虚拟机对此一无所知。
-    这里举了一个java编译器如何反射内部类的过程。有时间搞懂！
+    通过反射getDeclaredxxx找到了编译器添加的final TalkingClock this$0 但是没看到static boolean access$0(TalkingClock)
+    这部分还是有点问题，但是这次先跳过了以后有机会回来再看看。
+    总而言之，如果内部类访问了私有数据域，就有可能通过附加在外围类所在包中的其他类访问它们。
+
+4.4 局部内部类
+    对于只在某个方法中使用过的类，可以直接在这个方法中定义局部类。如上面的TimePrinter类只有start方法用过。
+    局部类不能用public或private访问说明符进行声明。它的作用域被限定在声明这个局部类的块中。
+    局部类有一个优势，即对外部世界可以完全的隐藏起来。即使TalkingClock类中的其他代码也不能访问它。除了start方法，没任何方法指导TimePrinter的存在。
+
+4.5由外部方法访问变量
+    与其他内部类相比较，局部类还有一个优点。它们不仅能够访问包含它们的外部类，还可以访问局部变量。不过，那些局部变量必须事实上为final。这说明它们一旦赋值就不会改变。以下代表明显少了public class 的public，并且在start中添加了参数，且beep是final！
+    public void start(int interval, final boolean  beep){
+        class TimerPrinter implements ActionListener{
+            public void actionPerformed(ActionEvent event){
+                System.out.println("At the tone, the time is " + new Date());
+                if(beep) Toolkit.getDefaultToolkit().beep();  // beep 是TalkingClock.this.beep的简写
+            }
+        }
+        ActionListener listener = this.new TimerPrinter();
+        Timer t = new Timer(interval, listener);
+        t.start();
+    }
+
+    分析上面代码的控制流程：
+    1）调用start()方法
+    2）调用内部类TimePrinter的构造器，以便初始化对象变量listener。
+    3）将listener引用传递给Timer构造器，定时器开始计时，start方法结束。此时start方法的beep参数变量不复存在。
+    4）然后actionPerformed方法执行if beep
+    为了能够让actionPerformed方法工作TimePrinter类在beep域释放之前将beep域用start方法的局部变量进行了备份。
+
+    上面讲了局部类的方法只能引用定义为final的局部变量。这显然是不大方便的，如果想要在一个封闭作用域内计数，则只能使用一个长度为1的数组来补救。
+
+补充：
+    1.final变量，如果是基本数据类型的变量，则其数值一旦在初始化之后便不能更改；如果是引用类型的变量，则在对其初始化之后便不能再让其指向另一个对象
+    2.final类：表明这个类不能被继承。final类中的所有成员方法都会被隐式地指定为final方法。
+    3.final方法：类中所有的private方法都隐式地指定为final。使用final方法的原因有两个。第一个原因是把方法锁定，以防任何继承类修改它的含义；第二个原因是效率。在早期的Java实现版本中，会将final方法转为内嵌调用。
+
+    1.static变量：被 static 修饰的成员属于类，不属于单个这个类的某个对象，被类中所有对象共享，可以并且建议通过类名调用。被static 声明的成员变量属于静态成员变量，静态变量 存放在 Java 内存区域的方法区。调用格式：类名.静态变量名
+    2.static方法：被static修饰，所以方法属于类，所以不能直接调用非静态变量但是可以通过对象来实现非静态变量，同时可以直接调用静态变量。类名.静态方法名()
+    以上两者都属于类成员
+    3.静态代码块：静态代码块定义在类中方法外, 静态代码块在非静态代码块之前执行(静态代码块—>非静态代码块—>构造方法)。 该类不管创建多少对象，静态代码块只执行一次。 我个人感觉静态代码块就是把
+    4.静态内部类：（static修饰类的话只能修饰内部类）： 静态内部类与非静态内部类之间存在一个最大的区别: 非静态内部类在编译完成之后会隐含地保存着一个引用，该引用是指向创建它的外围类，但是静态内部类却没有。没有这个引用就意味着：1. 它的创建是不需要依赖外围类的创建。2. 它不能使用任何外围类的非static成员变量和方法。
+    5.静态导包(用来导入类中的静态资源，1.5之后的新特性): 格式为：import static 这两个关键字连用可以指定导入某个类中的指定静态资源，并且不需要使用类名调用类中静态成员，可以直接使用类中静态成员变量和成员方法。
+    6.静态绑定：使用关键词 private,static,final方法或者构造器.在程序运行前就已经知道方法是属于那个类的，在编译的时候就可以连接到类的中，定位到这个方法。动态绑定（后期绑定）是指：在程序运行过程中，根据具体的实例对象才能具体确定是哪个方法。动态绑定是多态性得以实现的重要因素
+
+4.6匿名内部类
+    将局部内部类的使用在深入一步，。假如只创建这个类的一个对象，就不必命名了。这种类被称为匿名内部类（anonymous inner class）。
+    public void start(int interval, boolean beep){
+        ActionListener listener = new ActionListener()
+        {
+            public void actionPerformed(ActionEvent event)
+            {
+                System.out.println("At the tone, the time is" + new Date());
+                if(beep) Toolkit.getDefaultToolkit().beep();
+            }
+        };
+        Timer t = new Timer(interval, listener);
+        t.start()
+    }
+    上述代码的含义是：创建一个实现ActionListener接口的类的新对象。需要实现的方法actionPerformed定义在括号{}内。 注意这个分号在括号后面，比较像一个结构体。
+    new SuperType(construction parameters)
+    {
+        inner class methods and data
+    }
+    SuperType可以是一个接口，于是内部类就要实现这个接口。它也可以是个类，于是内部类就需要扩展他。
+    由于构造器名字必须与类名相同，而匿名类没有类名，所以匿名类不能有构造器。取而代之的是，将构造器参数传递给超类（superclass）构造器。尤其是在内部类实现接口的时候，不能有任何构造参数。不仅如此，还要提供一组括号。
+    如果构造参数的闭小括号后面根一个开大括号，正在定义的就是匿名内部类。
+    多年来，java程序员习惯做法是用匿名内部类实现监听器和其他回调。如今最好还是使用lambda表达式
+
+关于匿名内部类用法，有一个技巧叫"双括号初始化" 书本255页。
+    invite(new ArrayList<String>(){{add("Harry");add("Tony")}});
+
+4.7 静态内部类
+    有时候，使用内部类只是为了把一个类隐藏在另外一个类的内部，并不需要内部类引用外围类对象。因此，可以把内部类声明为static，以便去下产生的引用。与常规内部类不同，静态内部类可以有静态域和方法。
+    比如当某个方法需要返回多个类型的变量时候（这在Python可以直接使用的），但是java需要新定义一个类用来包含这些返回变量。这个时候就可以使用静态内部类。
+    这个静态内部类的例子感觉很牵强，为什么不能直接使用数组代表多个类别呢？关于静态内部类和数组的关系，有待思考
+
+内部类总结：
+    内部类：属于这个类。
+    局部内部类：放在某个内的具体某个方法中。
+    匿名内部类：只创建这个内部类的一个对象。这个对象是某个结构实现类的对象，也可以说是一个类的扩展类。
+    静态内部类：没有看懂定位
+
+5. 代理
+是spring中AOP的一个基础。这里做个基本了解吧
+利用代理可以在运行时创建一个实现了一组给定接口的新类。这种功能只有在编译时无法确定需要实现哪个接口时才有必要使用。
+5.1何时使用代理
+    假设有一个表述接口的Class对象（有可能只包含一个接口），它的确切类型在编译时无法知道。要想构造一个实现这些接口的类，就需要使用newInstance方法或反射找出这个类的构造器。但是，不能实例化一个接口，需要在程序处于运行状态时定义一个新类。
+
 
 
