@@ -52,7 +52,7 @@ public class ReflectionTest {
      */
     public static void printConstructors(Class c1)
     {
-        Constructor[] constructors = c1.getConstructors();  // 获得全部构造器（可能有多个）
+        Constructor[] constructors = c1.getDeclaredConstructors();  // 获得全部构造器（可能有多个）
         for (Constructor c : constructors)
         {
             String name = c.getName();  // 获取构造器的名字
@@ -78,7 +78,7 @@ public class ReflectionTest {
      */
     public static void printMethods(Class c1)
     {
-        Method[] methods = c1.getMethods();
+        Method[] methods = c1.getDeclaredMethods();
         for (Method method: methods)
         {
             String name = method.getName();
@@ -104,7 +104,7 @@ public class ReflectionTest {
      */
     public static void printFields(Class c1)
     {
-        Field[] fileds = c1.getFields();
+        Field[] fileds = c1.getDeclaredFields();
 
         for (Field field:fileds)
         {
