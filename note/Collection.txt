@@ -1,0 +1,160 @@
+集合
+1.java集合框架
+1.1 将集合的接口与实现分离
+    java集合类库也将接口（interface）和实现（implementation）分离。下面以队列（queue）为例。
+    队列接口指出可以在队列的尾部添加元素，在队列的头部删除元素，并可查找队列中元素的个数。当需要手机对象，并按照“先进先出”的规则检索对象时就应该使用队列。以下就是java11中队列的接口：
+
+    //<E> the type of elements held in this queue
+    public interface Queue<E> extends Collection<E>
+        boolean add(E e);
+        boolean offer(E e);
+        E remove();
+        E poll();
+        E element();
+        E peek();
+    }
+
+    注意上面的queue接口是继承了collection接口的，在collection接口中还有 int size()之类的方法。这个接口并没有说明队列是如何实现的，队列通常有两种实现方式，一种是使用循环数组(ArrayDeque类)，另一种是使用链表（LinkedList类。
+    public class ArrayDeque<E> extends AbstractCollection<E>
+                               implements Deque<E>, Cloneable, Serializable
+
+    public class LinkedList<E>
+        extends AbstractSequentialList<E>
+        implements List<E>, Deque<E>, Cloneable, java.io.Serializable
+    注意上述这两个实现的接口都是Deque<E>，这个接口继承于Queue。当在程序中使用队列时，一旦构建了集合就不需要知道究竟使用了那种实现。如果想实现自己的类库，比如就会发现以Abstract开头的类。扩展的AbstractQueue类要比实现Queue接口中的方法轻松的多。
+
+1.2.Collection接口
+    在java类库中，集合类的基本接口是Collection接口。这个接口有两个基本方法：
+    public interface Collection<E>{
+        boolean add(E e);
+        Iterator<E> iterator();
+        ...
+    }
+    add方法是用于添加元素，如果添加元素确实改变了集合则返回true，如果集合没有发生变化则返回false。iterator方法用于返回一个实现了Iterator接口的对象。可以使用这个迭代器访问集合中的元素。
+
+1.3. 迭代器
+Iterator接口包含4个方法：
+    public interface iterator<E>{
+        E next();
+        boolean hasNext();
+        void remove();
+        default void forEachRemaining(Consumer<? super E>action);
+    }
+
+    public interface Iterable<T> {
+        Iterator<T> iterator();
+        default void forEach(Consumer<? super T> action){...}
+        default Spliterator<T> spliterator(){...}
+    }
+
+    其中Consumer是一个@FunctionalInterface的接口。Iterable是接口，Iterable是1.5引入的新特性，Iterator是1.2就有了，二者都是为了迭代造作，Iterable只是包装了Iterator,从而允许实现此接口的对象成为for each语句的目标，而且这样的话，更方便以后的扩展。
+    而Collection接口又扩展了Iterable接口。因此，对于标准类库中的任何集合都可以使用"for each"循环。
+    另外iterator提供的接口forEachRemaining可以不用写循环而直接使用lambda表达式即可。将对迭代器的每一个元素调用这个lambda比到手，直到再没元素为止。可以对迭代器使用lambda表达式~！首先获得集合对象的迭代器，然后用下面方法做lambda。
+        iterator.forEachRemaining(element -> do something with element);
+
+    元素的方法类型取决于集合类型。如果对ArrayList进行迭代，迭代器将从索引0开始，每迭代一次，索引值加1。然而对HashSet中的元素，每个元素将会按照某种随机的次序出现。
+    java的迭代器与C++的STL是不一样的。C++的STL中的迭代器是根据数组索引建模的。而JAV迭代器查找操作与位置变更是紧密相连的。查找一个元素的唯一方法是调用next，而在执行查找操作的同时，迭代器的位置随之向前移动。因此，应该将java迭代器认为是位于两个元素之间，当调用next时，迭代器就越过下一个元素，并返回刚刚越过的那个元素的引用。
+    另外，iterator.next与InStream.read看作为等效的。从数据流中读取一个字节，就会自动地“消耗掉”这个字节。 我觉得java的迭代像pop,而c++的是索引。
+    这样java删除一个元素就必须将next和remove一起调用，两者具有相互依赖性。
+        Iterator<String> it = c.iterator();
+        it.next(); //越过第一个元素
+        it.remove(); // 删除这个元素
+
+1.4. 泛型实用方法
+    Collection接口声明了很多有用的方法，所有的实现类都必须提供这些方法。当然，如果实现Collection接口的每一个类都要提供如此多的例行方法将是一件烦人的事情。为了能够让实现者更容易地实现这个接口，java类库提供了一个类AbstractCollection，它将出方法size和iterator抽象化了，但在此提供了例行方法。此时，一个具体的集合类可以扩展AbstractCollection类了。
+    对于java SE8，这种方法已经过时了。如果这些方法是Collection接口的默认方法会更好。但实际上不是这样，不过确实已经增加了很多默认方法。其中大部分都和流处理有关。另外，还有一个很有用的方法（用于删除满足某个条件的元素）：
+        default boolean removeIf(Predicate<? super E>filter)
+
+1.5. 集合框架中的接口
+Iterable<-- Collection<---List
+                      <---Set   <---SortedSet<---NavigableSet
+                      <---Queue <---Deque
+
+            Map       <---SortedMap          <---NavigableMap
+            Iterator  <---ListIterator
+            RandomAccess
+集合有两个基本的接口，Collection和Map。一般使用add插入元素，put插入键值对。
+List
+是一个有序集合（ordered collection）。元素会增加到容器中的特定位置。可以采用两种方式访问元素：使用你迭代器或者使用一个整数索引来访问。后一种方法称为随机访问，因此这样可以按任意顺序访问元素。实际上有两种有序集合，其性能开销有很大差异。由数组支持的有序集合可以快速访问，因此适合使用list方法并提供一个整数索引来访问。与之不同，链表尽管也是有序的，但是随机访问很慢，所以最好使用迭代器来遍历。
+
+set
+接口等同于Collection接口，不过其方法的行为有更严谨的定义。集（set）的add方法不允许增加相同的元素。要适当地定义集的equals方法：只要两个集包含同样的元素就认为是相等的，而不要求这些元素有相同的顺序。hashCode方法的定义要保证包含相同元素的两个集会得到相同的散列码。
+
+2.具体的集合
+java库中的具体集合
+集合类型                描述
+ArrayList           一种可以动态增长和缩减的索引序列
+LinkedList          一种可以在任何位置进行高效地插入和删除操作的有序序列
+ArrayDeque          一种用循环数组实现的双端队列
+HashSet             一种没有重复元素的无序集合
+TreeSet             一种有序集
+EnumSet             一种包含枚举类型值的集
+LinkedHashSet       一种可以记住元素插入次序的集
+PriorityQueue       一种允许高效删除最小元素的集合
+HashMap             一种存储键值关联的数据结构
+TreeMap             一种键值有序排列的映射表
+EnumMap             一种键值属于枚举类型的映射表
+LinkedHashMap       一种可以记住键值项添加次序的映射表
+WeakHashMap         一种其值无用武之地后可以被垃圾回收器回收的映射表
+IdentityHashMap     一种用==而不是用equals比较键值的映射表
+
+AbstractCollection<--AbstractList       <--AbstractSequentialList(LinkedList) + ArrayList
+                  <--AbstractSet        <--HashSet(LinkedHashSet) + EnumSet + TreeSet
+                  <--AbstractQueue      <--PriorityQueue + ArrayQueue
+
+AbstracMap        <--HashMap            <--LinkedMap
+                  <--TreeMap
+                  <--EnumMap
+                  <--WeakHashMap
+                  <--IdentityHashMap
+2.1 链表List
+    List是一个接口，他用于描述一个有序集合。
+    虽然经常使用数组和ArrayList类，然而数组和数组列表都有一个重大的缺陷————从数组的中间位置删除一个元素要付出很大的代价。其原因是数组中处理被删除元素知乎的所有元素都要向数组的前端移动。想数组中插入也是这样的。
+    而链表解决了这个问题。在Java中，所有链表实际上都是双向链接的（double linked）————即每个节点还存放着指向前驱节点的引用。
+    但是，链表和泛型集合之间有一个重要的区别。链表是一个有序集合（ordered collection），每个对象的位置十分重要。LinkedList方法将对象添加到链表尾部。但常常需要将元素添加到链表的中间。由于迭代器是描述集合中位置的，所以这种依赖于位置的add方法将由迭代器负责。而对于集合中元素完全无序的类型，如set类型，迭代器中就没有add方法，因为没有意义。
+
+    有序集合（list）和无需集合（set）的区别在于：迭代器是否有add方法。另外，add依赖于迭代器的位置，而remove方法依赖于迭代器的状态，这句话的意思是迭代器调用next+remove会删除左边的元素，迭代器调用previous+remove则会删除右边的元素，另外迭代器不能连续调用两次remove。
+    另外，set方法用一个新元素取代调用next或previous方法返回的上一个元素。
+    可以使用LinkedList类从前后两个方向遍历链表中的元素，并可以添加、删除元素。
+
+    同一个集合多个迭代器的问题：
+    如果一个迭代器发现它的集合被另外一个迭代器修改了，或是被该集合自身的方法修改了，就会抛出一个ConcurrentModificationException。
+    为了避免发生异常，一般遵循以下规则：可以根据需要给容器附加许多的迭代器，但是这些迭代器只能只能读取列表。另外，再单独附加一个技能读又能写的迭代器。
+    有一种简单的方法可以检测到并发修改的问题。集合可以跟踪改写做出的次数。每个迭代器都维护一个独立的计算值。在每个迭代器方法的开始处检查自己改写操作的计数值是否与集合的改写操作计数值一致。如果不一致则抛出异常。
+
+
+2.2 数据列表
+    Collection类库提供了ArrayList类，这个类也实现了List接口。ArrayList封装了一个动态再分配的对象数组。
+    在需要动态数组的时候， 可能会考虑vector类。但是vector类的所有方法都是同步的。可以由两个线程安全地访问一个vector对象。但如果是一个线程访问vector类，代码需要在同步上耗费大量的时间。这个时候建议使用不是同步的ArrayList类。
+    注：ArrayList是自动扩容的Arrays。有add().remove()这样的方法。ArrayList容量可以动态增长，但牺牲效率；Array([])高效，但是容量固定无法改变。
+    List是接口，ArrayList是用一个数组实现的List类。而LinkedList也是List接口的一个实现类，两者实现的接口区别在于：ArrayList实现了接口RandomAccess;LinkedList实现了接口Deque。继承方面，ArrayList是直接继承的AbstractList而LinkedList则是继承的AbstractList的子类AbstractSequentialList。
+    如果需要对集合进行随机方法，就使用数组或ArrayList,而为了尽可能地减少在列表中插入或删除元素付出的代价，则可以使用链表。
+
+2.3 散列集
+    链表和数组可以按照人们的意愿排列元素的次序。但是，如果想要查看某个指定的元素，却又忘记了它的位置，就需要访问所有元素，直到找到为止。而hash table可以快速的查找所需的对象。如果自定义类，就要负责实现这个类的hashCode方法。自己实现的hashCode方法应该与equals方法兼容。
+    哈希函数最主要的问题是要解决哈希冲突，解决哈希冲突的方法有两种：链接法（chaining），开放寻址法（open addressing）和再散列法
+    而哈希函数主要有除法散列，乘法散列和全局散列法三种。
+    现在最重要的问题是hash code要能够快速地计算出来，并且这个计算只与要散列的对象状态有关，与散列表中的其他对象无关。在java中，散列表用链表数组实现。每个列表被称为桶（bucket）。要想查找表中对象的位置，就要先计算它的散列码，然后与桶的总数取余，所得到的结果就是保存这个元素的桶的索引。
+    在java SE8中，桶满时会从链表变为平衡二叉树。如果选择的散列函数不当，会产生很多冲突，或者如果有恶意代码试图在散列表中填充多个有相同散列码的值，这样就能提高性能。
+    关于桶数的设置（知道总元素数）：1.设置为元素个数的75%~150%；2.设置素数（防止）。
+    如果总元素数不知道，在表太满时就需要再散列。其中装填因子（load factor）决定何时对散列表进行再散列。如果装填因子为0.75（default），而表中超过75%的位置已经填入元素，这个表就会用双倍的桶数自动地进行再散列。
+    HashSet类，它实现了基于散列表的集。可以用add方法添加元素。contains方法已经被重新定义，用来快速地查看某个元素已经出现在集中。
+2.4 树集
+    TreeSet类与散列集十分类似，不过，它比散列集有所改进。树集是一个有序集合（sorted collection）。可以以任意顺序将元素插入到集合中。在对集合进行遍历时，每个值将自动地按照排序后的顺序呈现。
+    正如TreeSet类名所示，排序是用树结构完成的,当前实现使用的是黑红树（red-black tree）。每次将一个元素添加到树中，被放置在正确的排序位置上。因此，迭代器综述以排好序的顺序访问每个元素。
+    将一个元素添加到树中要比添加到散列表中慢，但是，与检查数组或链表中的重复元素相比还是快很多。如果树中包含n个元素，查找新元素的争取位置平均需要log2 n 次比较。
+    另外，要使用树集，必须能够比较元素。这些元素必须实现了Comparable接口，或者构造集时必须提供一个Comparator。
+    表面上看，树集比散列集似乎好很多，但是树集的缺点是树的排序必须是全序的！
+
+2.5 队列与双端队列
+    队列可以让人民有效地在尾部添加一个元素，在头部删除一个元素。有两个端头的队列，即双端队列，可以让人们有效地在头部和尾部同时添加或删除火元素。 Queue\Deque是接口，ArrayDeque是实现类。
+    public class ArrayDeque<E> extends AbstractCollection<E>
+                               implements Deque<E>, Cloneable, Serializable
+
+2.6 优先级队列（priority queue）————使用了堆heap结构的队列
+    优先级队列中的元素可以按照任意的顺序插入，却总是按照排序的顺序进行检索。也就是说，无论何时调用remove方法，总会获得当前优先级队友中最小的元素。然而，优先级队列并没有对所有元素进行排序。如果用迭代的方式处理这些元素，并不需要对他们进行排序。优先级队列使用的数据结构称为堆。
+    和TreeSet一样，一个优先级队列既可以保存实现了Comparable接口的类对象，也可以保存在构造器中提供的Comparator对象。
+    而使用优先级队列的典型事例是任务调度。每个任务有一个优先级，任务以随机顺序添加到队列中。每当启动一个新的任务时，都将优先级最高的任务从队列中删除。
+
+
+3. 映射
