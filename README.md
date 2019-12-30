@@ -22,7 +22,13 @@
 **Because I want to accelerate my plant,I decided to skip charpter 7,8.I'll back when I finish chapter 9.**
 
 ## Chapter 9 Collection
-**In this chapter I want to combine this book with *Introduction to Algorithm*. So this chapter is the fundamental of algorithm.I will continues my data structures learning in another project.**
+~~**In this chapter I want to combine this book with *Introduction to Algorithm*. So this chapter is the fundamental of algorithm.I will continues my data structures learning in another project.**~~
+
+**In fact, this chapter introduce *Collection, Map interface/class and their sub-interface/class(such as List,Set,Queue)* the overview is at Collection.txt-1.5. and Collection.txt-2**
+* This chapter focus on introduce How java organize data structure rather than how to use java write a data structure or algorithm.
+* This chapter also dont introduce the method in each class, **it is just a overview!**
+
+
 
 
  
