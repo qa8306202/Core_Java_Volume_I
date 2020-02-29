@@ -1,0 +1,160 @@
+### 补充：接口，内部类，lambda表达式
+#### 前言：前面的txt文件代表的阅读了第一次关于*Core Java Volumne I*。而这次的补充是在我阅读源码过程中对这这一部分的深入理解，这个部分会随着我对java的理解而更新，变化。
+* 格式：时间，内容标题，内容
+
+### 2020-02-29
+#### Interface, lambda expression and innerclass is a whole!
+**如果类遵循某个特定接口，那么履行这项服务**
+
+~~**到底什么是接口，什么又是服务？他们有什么相同点，又有什么不同点？**~~
+1. 刚读*Core Java Volumne I*对这句话的理解十分浅显，就是**如果存在一个接口，那么必定存在至少一个对应这个接口的实现类**。
+2. 在学习了lambda表达式后，发现一个接口可以是一个函数式接口``@FunctionalInterface``,我们不需要任何的实现类和实现类方法，仅仅通过调用别的方法
+3. 在学习了mybatis之后发现，对于一个接口可以不编写任何的实现类，但是就能返回接口的实例————通过**动态代理**接管了接口。
+4. 在接口中写内部类
+
+##### 函数式接口(lambda + interface):匿名函数和方法引用
+1. 写一个``@FunctionalInterface``接口。
+```java
+    @FunctionalInterface
+    public interface IPrintable {
+        // define one abstract method
+        void print(String s);
+    }
+```
+
+2. 通过一个方法(printString)包装接口，这个方法的参数就是该函数式接口
+```java 
+    public static void printString(IPrintable p,String output) {
+        p.print(output);
+    }
+```
+3. 在使用这个接口的时候对上面包装的方法（printString）使用**lambda表达式**进行重写
+* 注意：使用labmda函数重写方法的前提是实现的接口中有且仅有一个需要重写的抽象方法。
+```java 
+    printString((s)->{
+        System.out.println(s);
+    },"lambda表达式");
+```
+
+4. 或在使用这个接口的时候对上面包装的方法（printString）使用**方法引用**的方式进行重写
+* 注意：1. System.out对象是已经存在的; 2. println方法也是存在的才可以直接用。
+```java 
+    printString(System.out::println,"howareyou");
+```
+
+* 总结：在写lambda表达式必须带上形参（如上面的s），而方法引用不需要形参
+#### 接口和内部类
+```java
+interface Stack 
+{	public void push(Object o);
+	public Object pop();
+	public Object top();
+	public boolean empty();
+	public boolean full();
+
+	public class Dense implements Stack
+	{	public Dense (int n)
+		{	imp = new Object[n];
+			capacity = n;
+		}
+
+		public void push(Object o)
+		{	imp[size++] = o;
+		}
+		//...
+		private Object []  imp; // Array implementation
+		private int size = 0;
+		private int capacity = 0;
+	}
+
+	public class Linked implements Stack
+	{	public Linked (){}
+
+		public void push(Object o)
+		{	head = new Node(o, head);
+		}
+		//...
+		private Node head = null; // Linked list
+
+		private class Node
+		{	public Node(Object val, Node nextNode)
+			{	value = val;
+				next = nextNode;
+			}
+			//...
+			private Object value;
+			private Node next;
+		}
+	}
+
+}
+```
+
+#### 以springboot中的方法为例
+在``WebMvcAutoConfiguration``中
+```java
+public static class WebMvcAutoConfigurationAdapter implements WebMvcConfigurer {
+    // ...
+    public void configureContentNegotiation(ContentNegotiationConfigurer configurer) {
+        WebMvcProperties.Contentnegotiation contentnegotiation = this.mvcProperties.getContentnegotiation();
+        configurer.favorPathExtension(contentnegotiation.isFavorPathExtension());
+        configurer.favorParameter(contentnegotiation.isFavorParameter());
+        if (contentnegotiation.getParameterName() != null) {
+            configurer.parameterName(contentnegotiation.getParameterName());
+        }
+        Map<String, MediaType> mediaTypes = this.mvcProperties.getContentnegotiation().getMediaTypes();
+        // 存在一个方法引用configurer是ContentNegotiationConfigurer类的
+        mediaTypes.forEach(configurer::mediaType);
+    }
+}
+```
+在这个类中的方法是这样的：
+* 其中``mediaTypes``是``LinkedHashMap<>()``
+
+* ``Map``接口的``foreach``使用了常用函数式接口``BiConsumer<T,U,R>``参数类型T,U，返回类型R。
+
+* ``BiConsumer<? super K, ? super V> action``中？表示通配符，通配符有extends bound 和 super bound两种
+
+* 首先是：<? extends T> 既然是extends，就是表示泛型参数类型的上界，说明参数的类型应该是T或者T的子类。
+   * 编译器只知道需要某个 T 的子类型，但不知道具体是什么类型。它拒绝传递任何特定的类型。毕竟？不能用来匹配。
+   * 希望只取出，不插入，就使用``? extends``
+   * 所以用泛型可以写出来一个安全的访问器
+
+* 然后是：``BiConsumer<? super K, ? super V>``表示任何泛型BiConsumer类型，因为修饰符是super所以它的类型参数的超类型限定（super bound，下界）是K和V，一直到object。
+   * 
+* 为什么要这样做呢？ 带有超类型限定的通配符的行为与 8.8 节介绍的相反。可以为方法提供参数， 但不能使用返回值。K和V是？是超类，那么超类可以代表参数
+
+* 下面参数T就可以用``? super K``的K表示，同理U可以用V表示。
+
+* 参考：核心技术330页
+
+* 注意：下面的方法实现是在接口中的，实际上，应该在实现类中的才是真正的“实现”，下面的``entrySet``相当于``ArrayList``中的``DataElement``或者``HashMap``中的``table
+``（这些类的底层都是通过数组实现的，而且被修饰了 transient   关键字而不会在默认的序列化函数中存储到文件中。）
+```java
+public interface Map<K, V> {
+    default void forEach(BiConsumer<? super K, ? super V> action) {
+        Objects.requireNonNull(action);
+        for (Map.Entry<K, V> entry : entrySet()) {
+            K k;
+            V v;
+            try {
+                k = entry.getKey();
+                v = entry.getValue();
+            } catch (IllegalStateException ise) {
+                // this usually means the entry is no longer in the map.
+                throw new ConcurrentModificationException(ise);
+            }
+            action.accept(k, v);
+        }
+    }
+}
+```
+上面的``action``就是指的下面这个方法引用：
+```java
+public class ContentNegotiationConfigurer {
+	public ContentNegotiationConfigurer mediaType(String extension, MediaType mediaType) {
+		this.mediaTypes.put(extension, mediaType);
+		return this;
+	}
+}
+```
