@@ -9,7 +9,7 @@
         boolean add(E e);
         boolean offer(E e);
         E remove();
-        E poll();
+        E pull();
         E element();
         E peek();
     }
@@ -136,7 +136,7 @@ AbstracMap        <--HashMap            <--LinkedMap
     而哈希函数主要有除法散列，乘法散列和全局散列法三种。
     现在最重要的问题是hash code要能够快速地计算出来，并且这个计算只与要散列的对象状态有关，与散列表中的其他对象无关。在java中，散列表用链表数组实现。每个列表被称为桶（bucket）。要想查找表中对象的位置，就要先计算它的散列码，然后与桶的总数取余，所得到的结果就是保存这个元素的桶的索引。
     在java SE8中，桶满时会从链表变为平衡二叉树。如果选择的散列函数不当，会产生很多冲突，或者如果有恶意代码试图在散列表中填充多个有相同散列码的值，这样就能提高性能。
-    关于桶数的设置（知道总元素数）：1.设置为元素个数的75%~150%；2.设置素数（防止）。
+    关于桶数的设置（知道总元素数）:1.设置为元素个数的75%~150%；2.设置素数（防止）。
     如果总元素数不知道，在表太满时就需要再散列。其中装填因子（load factor）决定何时对散列表进行再散列。如果装填因子为0.75（default），而表中超过75%的位置已经填入元素，这个表就会用双倍的桶数自动地进行再散列。
     HashSet类，它实现了基于散列表的集。可以用add方法添加元素。contains方法已经被重新定义，用来快速地查看某个元素已经出现在集中。
 2.4 树集
@@ -343,4 +343,15 @@ AbstracMap        <--HashMap            <--LinkedMap
     }
 9.6 遗留的集合
     包括Hashtable类，枚举，属性映射，栈，位集。（没看）
+
+9.6.4 栈（用于LeetCode_020）
+    从1.0版开始，标准类库中就包含了Stack类，其中有大家熟悉的push方法和pop方法。
+    但是，Stack类扩展为Vector类（Stack是Vector的子类），从理论角度来看，Vector类并不令人满意，它可以让栈使用不属于栈操作的insert和remove方法，即可以在任何地方插入或删除操作，而不仅仅是在栈顶。
+    而Vector是AbstractList，AbstractList是AbstractCollections的子类。这些类都实现了Collection接口。所以都实现了Collection接口的方法。
+    AbstractList是Vector,LinkedList,ArrayList的父类。而且LinkedList实现了接口List。
+
+    E push(E item) 将item压入栈并返回item。
+    E pop(E item) 弹出并返回栈顶的item。如果栈为空，请不要是用这个方法。
+    E peek() 返回栈顶元素，但不弹出。如果栈为空，请不要调用这个方法。
+    E empty()是否为空，如果为空，返回true(size==0)
 

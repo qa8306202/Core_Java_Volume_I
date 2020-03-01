@@ -357,7 +357,7 @@ ArrayList除了初始化函数以外还有以下方法：
 
 可以将forName与newInstance配合使用，可以根据存在字符串中的类名创建一个对象。
     String s =  "java.util.Random";
-    Object m = Class.forName(s)newInstance();
+    Object m = Class.forName(s).newInstance(); // Class.forName("com.ssozh.dao.IAccountDao").getDeclaredConstructor().newInstance();
 如果需要以这种方式向希望按名称创建的类的构造器提供参数，就不需要使用上面那条语句，而必须使用Constructor类中国年的newInstance方法。
 
 7.2 捕获异常
