@@ -158,3 +158,26 @@ public class ContentNegotiationConfigurer {
 	}
 }
 ```
+#### stream流
+* stream操作有两个基础特征：
+   1. pipelining：中间操作都会返回流对象本身，这样多个操作可以串联成一个管道，如同流式风格。这样做可以对操作进行优化，比如延迟执行和短路。
+   2. 内部迭代：以前对集合遍历都是通过iterator或者增加for的方法，显式的在集合外部进行迭代，这叫做外部迭代。stream提供了内部迭代的方式，流可以直接调用遍历方法。
+   3. stream流属于管道流，只能被消费使用一次，第一个stream流调用完毕方法，数据就会转移到下一个stream上，而这时第一个stream流已经使用完毕，就会关闭了，所以第一个
+1. 获取流stream
+   * 把集合Collection转化为stream流，比如``Stream<String> stream1 = list.stream()``
+2. 常用方法
+   * 延迟方法：返回值任然是``Stream``接口自身类型的方法，支持链式调用。（除了终结方法外，其余方法均为延迟方法）
+   * 终结方法：返回值类型不再是``Stream``接口自身类型的方法，因此不再支持类似``StringBuilder``那样的链式调用。终结方法包括``forEach``和``count``方法。
+3. filter方法（延迟方法）
+   ```java 
+        Stream<String> stream1 = list.stream();
+        Stream<String> stream2 = Stream.filter((name)->{return name.startwith(name);});         
+   ```
+4. map方法传入的是Function接口（函数接口）（延迟方法）
+   ```java 
+    Stream<String> stream2 = Stream.map((name)->{return Integer.parseInt(name);});  
+   ```
+5. count统计个数（是一个终结方法!）
+6. limit对流中的元素进行截取，获取前几个。是一个延迟方法
+7. skip跳过几个，是一个延迟方法
+8. concat组合方法，将两个流合并成一个新的流。是一个静态方法。和String的concat不一样。
